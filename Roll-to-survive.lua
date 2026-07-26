@@ -75,7 +75,9 @@ local Toggle2 = MainTab:CreateToggle({
                    task.spawn(function() Event:FireServer(3) end)
                    task.spawn(function() Event:FireServer(3) end)
                    task.spawn(function() Event:FireServer(3) end)
-                   
+                   task.spawn(function() Event:FireServer(3) end)
+                   task.spawn(function() Event:FireServer(3) end)
+                    
                    task.wait(0.03) 
                end
                
@@ -126,8 +128,6 @@ _G.WalkSpeedEnabled = false
 _G.WalkSpeedValue = 16
 _G.NoclipActive = false
 _G.InfiniteJumpActive = false
-_G.FlyActive = false
-_G.FlySpeed = 50 
 
 -- SERVICE HOOKS FOR UTILITIES
 local UserInputService = game:GetService("UserInputService")
@@ -177,98 +177,6 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- Mobile Compatible Real Admin Fly Engine
-local flyConnection
-local function StartFlight()
-    local character = LocalPlayer.Character
-    local root = character and character:FindFirstChild("HumanoidRootPart")
-    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-    
-    if not root or not humanoid then return end
-    
-    local workspaceGravity = workspace.Gravity
-    workspace.Gravity = 0 
-    
-    -- Keyboard tracking fallbacks
-    local keysPressed = {W = false, A = false, S = false, D = false, Space = false, LeftShift = false}
-    
-    local inputBegan = UserInputService.InputBegan:Connect(function(input, gpe)
-        if gpe then return end
-        if input.KeyCode == Enum.KeyCode.W then keysPressed.W = true
-        elseif input.KeyCode == Enum.KeyCode.S then keysPressed.S = true
-        elseif input.KeyCode == Enum.KeyCode.A then keysPressed.A = true
-        elseif input.KeyCode == Enum.KeyCode.D then keysPressed.D = true
-        elseif input.KeyCode == Enum.KeyCode.Space then keysPressed.Space = true
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then keysPressed.LeftShift = true end
-    end)
-    
-    local inputEnded = UserInputService.InputEnded:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.W then keysPressed.W = false
-        elseif input.KeyCode == Enum.KeyCode.S then keysPressed.S = false
-        elseif input.KeyCode == Enum.KeyCode.A then keysPressed.A = false
-        elseif input.KeyCode == Enum.KeyCode.D then keysPressed.D = false
-        elseif input.KeyCode == Enum.KeyCode.Space then keysPressed.Space = false
-        elseif input.KeyCode == Enum.KeyCode.LeftShift then keysPressed.LeftShift = false end
-    end)
-    
-    humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-    
-        flyConnection = RunService.RenderStepped:Connect(function()
-        if not _G.FlyActive or not root or not root.Parent then
-            if flyConnection then flyConnection:Disconnect() end
-            inputBegan:Disconnect()
-            inputEnded:Disconnect()
-            workspace.Gravity = workspaceGravity 
-            if humanoid then humanoid:ChangeState(Enum.HumanoidStateType.GettingUp) end
-            return
-        end
-        
-        -- Zero out normal gravity falling and momentum to prevent sliding
-        root.Velocity = Vector3.new(0, 0, 0)
-        root.RotVelocity = Vector3.new(0, 0, 0)
-        
-        local cameraCFrame = Camera.CFrame
-        local moveVector = Vector3.new(0, 0, 0)
-        
-        -- CROSS-PLATFORM INPUT COMPILATION
-        if humanoid.MoveDirection.Magnitude > 0 then
-            -- MOBILE JOYSTICK FIX:
-            -- Instead of taking the flat move direction, we translate the joystick relative to the camera angle
-            local joystickDir = humanoid.MoveDirection
-            
-            -- If you move forward on the thumbstick, fly exactly where the camera faces
-            -- If you move backward, fly exactly opposite of where the camera faces
-            local forwardAxis = cameraCFrame.LookVector
-            local rightAxis = cameraCFrame.RightVector
-            
-            -- Combine raw screen directions into true 3D vector paths
-            -- Pushing forward moves along the camera angle, pushing left/right pans along the side angle
-            moveVector = (forwardAxis * -joystickDir.Z) + (rightAxis * joystickDir.X)
-        else
-            -- PC KEYBOARD FALLBACKS
-            if keysPressed.W then moveVector = moveVector + cameraCFrame.LookVector end
-            if keysPressed.S then moveVector = moveVector - cameraCFrame.LookVector end
-            if keysPressed.D then moveVector = moveVector + cameraCFrame.RightVector end
-            if keysPressed.A then moveVector = moveVector - cameraCFrame.RightVector end
-            if keysPressed.Space then moveVector = moveVector + Vector3.new(0, 1, 0) end
-            if keysPressed.LeftShift then moveVector = moveVector - Vector3.new(0, 1, 0) end
-        end
-        
-        -- UPDATE COORDINATE POSITION EXTENSIONS
-        if moveVector.Magnitude > 0 then
-            -- Smoothly offset the character CFrame along the true calculated 3D path vector
-            root.CFrame = CFrame.new(root.Position + (moveVector.Unit * (_G.FlySpeed / 25))) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
-        else
-            -- Hold orientation perfectly locked in place while drifting idle
-            root.CFrame = CFrame.new(root.Position) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
-        end
-    end)
-   
-LocalPlayer.CharacterAdded:Connect(function()
-    if flyConnection then flyConnection:Disconnect() end
-    _G.FlyActive = false
-end)
-
 -- TOGGLE: ACTIVATE WALKSPEED
 local SpeedToggle = UtilityTab:CreateToggle({
    Name = "Enable WalkSpeed",
@@ -289,32 +197,6 @@ local SpeedSlider = UtilityTab:CreateSlider({
    Flag = "SpeedSliderFlag", 
    Callback = function(Value)
        _G.WalkSpeedValue = Value
-   end,
-})
-
--- TOGGLE: ADMIN COMMAND FLY MODE
-local FlyToggle = UtilityTab:CreateToggle({
-   Name = "Fly (Admin Style)",
-   CurrentValue = false,
-   Flag = "FlyToggleFlag",
-   Callback = function(Value)
-       _G.FlyActive = Value
-       if Value then
-           StartFlight()
-       end
-   end,
-})
-
--- SLIDER: FLIGHT ACCELERATION SPEED
-local FlySpeedSlider = UtilityTab:CreateSlider({
-   Name = "Flight Speed Multiplier",
-   Range = {10, 300},
-   Increment = 5,
-   Suffix = "Speed",
-   CurrentValue = 50,
-   Flag = "FlySpeedSliderFlag", 
-   Callback = function(Value)
-       _G.FlySpeed = Value
    end,
 })
 
