@@ -213,7 +213,7 @@ local function StartFlight()
     
     humanoid:ChangeState(Enum.HumanoidStateType.Physics)
     
-    flyConnection = RunService.RenderStepped:Connect(function()
+        flyConnection = RunService.RenderStepped:Connect(function()
         if not _G.FlyActive or not root or not root.Parent then
             if flyConnection then flyConnection:Disconnect() end
             inputBegan:Disconnect()
@@ -223,16 +223,29 @@ local function StartFlight()
             return
         end
         
+        -- Zero out normal gravity falling and momentum to prevent sliding
         root.Velocity = Vector3.new(0, 0, 0)
         root.RotVelocity = Vector3.new(0, 0, 0)
         
         local cameraCFrame = Camera.CFrame
         local moveVector = Vector3.new(0, 0, 0)
         
-        -- Cross-platform system: Detects Mobile Joystick input or PC Keyboard input
+        -- CROSS-PLATFORM INPUT COMPILATION
         if humanoid.MoveDirection.Magnitude > 0 then
-            moveVector = humanoid.MoveDirection
+            -- MOBILE JOYSTICK FIX:
+            -- Instead of taking the flat move direction, we translate the joystick relative to the camera angle
+            local joystickDir = humanoid.MoveDirection
+            
+            -- If you move forward on the thumbstick, fly exactly where the camera faces
+            -- If you move backward, fly exactly opposite of where the camera faces
+            local forwardAxis = cameraCFrame.LookVector
+            local rightAxis = cameraCFrame.RightVector
+            
+            -- Combine raw screen directions into true 3D vector paths
+            -- Pushing forward moves along the camera angle, pushing left/right pans along the side angle
+            moveVector = (forwardAxis * -joystickDir.Z) + (rightAxis * joystickDir.X)
         else
+            -- PC KEYBOARD FALLBACKS
             if keysPressed.W then moveVector = moveVector + cameraCFrame.LookVector end
             if keysPressed.S then moveVector = moveVector - cameraCFrame.LookVector end
             if keysPressed.D then moveVector = moveVector + cameraCFrame.RightVector end
@@ -241,19 +254,16 @@ local function StartFlight()
             if keysPressed.LeftShift then moveVector = moveVector - Vector3.new(0, 1, 0) end
         end
         
+        -- UPDATE COORDINATE POSITION EXTENSIONS
         if moveVector.Magnitude > 0 then
-            if humanoid.MoveDirection.Magnitude > 0 then
-                -- Mobile flight uses camera view vector orientation paired with joystick force vectors
-                root.CFrame = CFrame.new(root.Position + (moveVector * (_G.FlySpeed / 25))) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
-            else
-                root.CFrame = CFrame.new(root.Position + (moveVector.Unit * (_G.FlySpeed / 25))) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
-            end
+            -- Smoothly offset the character CFrame along the true calculated 3D path vector
+            root.CFrame = CFrame.new(root.Position + (moveVector.Unit * (_G.FlySpeed / 25))) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
         else
+            -- Hold orientation perfectly locked in place while drifting idle
             root.CFrame = CFrame.new(root.Position) * CFrame.Angles(cameraCFrame:ToEulerAnglesXYZ())
         end
     end)
-end
-
+   
 LocalPlayer.CharacterAdded:Connect(function()
     if flyConnection then flyConnection:Disconnect() end
     _G.FlyActive = false
