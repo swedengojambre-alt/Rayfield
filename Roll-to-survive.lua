@@ -108,11 +108,11 @@ local Toggle1 = MainTab:CreateToggle({
                       if orb and orb:IsA("BasePart") then
                           local originalPos = root.CFrame
                           root.CFrame = orb.CFrame
-                          task.wait(0.1)
+                          task.wait(0.0001)
                           root.CFrame = originalPos
                       end
                   end
-                  task.wait(0.2)
+                  task.wait(0.0001)
               end
           end)
       end
