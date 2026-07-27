@@ -105,12 +105,23 @@ local Toggle1 = MainTab:CreateToggle({
                   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
                   if root and humanoid then
-                      local orb = workspace:FindFirstChild("DropOrb")
-                      if orb and orb:IsA("BasePart") then
-                          -- SAVE YOUR EXACT STARTING POSITION
+                      -- Find a DropOrb that has NOT been claimed yet
+                      local orb = nil
+                      for _, child in ipairs(workspace:GetChildren()) do
+                          if child.Name == "DropOrb" and child:IsA("BasePart") and not child:GetAttribute("Claimed") then
+                              orb = child
+                              break
+                          end
+                      end
+
+                      if orb then
+                          -- 1. LOCK THE ORB SO WE ONLY TELEPORT TO IT ONCE
+                          orb:SetAttribute("Claimed", true)
+
+                          -- 2. SAVE YOUR EXACT STARTING POSITION
                           local originalPos = root.CFrame
                           
-                          -- TURN OFF MAP COLLISIONS
+                          -- 3. TURN OFF MAP COLLISIONS FOR CLEAN POSITIONING
                           humanoid:ChangeState(Enum.HumanoidStateType.Physics)
                           for _, part in ipairs(character:GetChildren()) do
                               if part:IsA("BasePart") then
@@ -118,28 +129,34 @@ local Toggle1 = MainTab:CreateToggle({
                               end
                           end
                           
-                          -- TELEPORT EXACTLY BELOW THE ORB
-                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 4, orb.Position.Z)
+                          -- 4. TELEPORT EXACTLY 5 STUDS STRAIGHT BELOW THE ORB (Strips out rotation)
+                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 5, orb.Position.Z)
                           root.CFrame = targetCFrame
-                          task.wait(0.02) -- Hold for 1 frame to register collection
                           
-                          -- TELEPORT BACK TO YOUR EXACT STARTING POSITION
+                          -- 5. WAIT 1 ENGINE FRAME FOR SERVER COLLECTION TO REGISTER
+                          task.wait(0.03) 
+                          
+                          -- 6. IMMEDIATELY TELEPORT BACK TO YOUR EXACT ORIGINAL POSITION
                           root.CFrame = originalPos
                           
-                          -- FORCE VELOCITY RESET (Prevents getting stuck or falling through original ground)
+                          -- 7. CLEAR MOMENTUM SO YOU DON'T GLITCH THROUGH THE FLOOR WHEN YOU RETURN
                           root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                           root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                           
-                          -- RESET CHARACTER STATE
+                          -- 8. RESET CHARACTER PHYSICS BACK TO NORMAL
                           humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+                          
+                          -- Small rest delay before checking for another new orb spawn
+                          task.wait(0.1)
                       end
                   end
-                  task.wait(0.02)
+                  task.wait(0.05) -- Clean background check speed to stop execution lag
               end
           end)
       end
    end,
 })
+
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
 local UtilityTab = Window:CreateTab("Utility", nil) 
