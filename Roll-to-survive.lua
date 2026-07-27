@@ -102,31 +102,39 @@ local Toggle1 = MainTab:CreateToggle({
                   local player = game.Players.LocalPlayer
                   local character = player.Character
                   local root = character and character:FindFirstChild("HumanoidRootPart")
+                  local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
-                  if root then
+                  if root and humanoid then
                       local orb = workspace:FindFirstChild("DropOrb")
                       if orb and orb:IsA("BasePart") then
                           local originalPos = root.CFrame
-                          local downwardOffset = Vector3.new(0, -7, 0)
+                          local downwardOffset = Vector3.new(0, -4, 0) -- Adjusted to 4 studs to sit completely clear below it
                           
-                          -- TURN OFF COLLISIONS ON THE OBJECT RIGHT HERE
-                          orb.CanCollide = false
+                          -- 1. FORCE THE HUMANOID TO IGNORE FLOOR GEOMETRY
+                          humanoid:ChangeState(Enum.HumanoidStateType.Physics)
                           
-                          -- MOVE BELOW THE OBJECT WITH THE OFFSET
+                          -- 2. DISABLE COLLISIONS ON THE CHARACTER TEMPORARILY
+                          for _, part in ipairs(character:GetChildren()) do
+                              if part:IsA("BasePart") then
+                                  part.CanCollide = false
+                              end
+                          end
+                          
+                          -- 3. TELEPORT BELOW THE OBJECT
                           root.CFrame = orb.CFrame + downwardOffset
+                          task.wait(0.01) -- Increased slightly so the engine registers the physical position
                           
-                          task.wait(0.1)
+                          -- 4. SNAP BACK AND RESET CHARACTER STATE
                           root.CFrame = originalPos
+                          humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                       end
                   end
-                  task.wait(0.1)
+                  task.wait(0.01) -- Stable frame yield to prevent client execution crashes
               end
           end)
       end
    end,
 })
-
-
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
 local UtilityTab = Window:CreateTab("Utility", nil) 
