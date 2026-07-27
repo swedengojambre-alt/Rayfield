@@ -105,7 +105,7 @@ local Toggle1 = MainTab:CreateToggle({
                   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
                   if root and humanoid then
-                      -- Find a DropOrb that has NOT been claimed yet
+                      -- Find an unclaimed DropOrb
                       local orb = nil
                       for _, child in ipairs(workspace:GetChildren()) do
                           if child.Name == "DropOrb" and child:IsA("BasePart") and not child:GetAttribute("Claimed") then
@@ -115,13 +115,13 @@ local Toggle1 = MainTab:CreateToggle({
                       end
 
                       if orb then
-                          -- 1. LOCK THE ORB SO WE ONLY TELEPORT TO IT ONCE
+                          -- 1. LOCK THE ORB IMMEDIATELY
                           orb:SetAttribute("Claimed", true)
 
-                          -- 2. SAVE YOUR EXACT STARTING POSITION
+                          -- 2. SAVE YOUR EXACT STARTING POSITION AND ORIENTATION
                           local originalPos = root.CFrame
                           
-                          -- 3. TURN OFF MAP COLLISIONS FOR CLEAN POSITIONING
+                          -- 3. BYPASS MAP GEOMETRY COLLISIONS
                           humanoid:ChangeState(Enum.HumanoidStateType.Physics)
                           for _, part in ipairs(character:GetChildren()) do
                               if part:IsA("BasePart") then
@@ -129,34 +129,34 @@ local Toggle1 = MainTab:CreateToggle({
                               end
                           end
                           
-                          -- 4. TELEPORT EXACTLY 5 STUDS STRAIGHT BELOW THE ORB (Strips out rotation)
-                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 5, orb.Position.Z)
+                          -- 4. FIX HEIGHT: Force position 5 studs BELOW the orb while matching your current look direction
+                          local lookDirection = originalPos.LookVector
+                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 5, orb.Position.Z) * CFrame.lookAt(Vector3.new(0,0,0), Vector3.new(lookDirection.X, 0, lookDirection.Z))
                           root.CFrame = targetCFrame
                           
-                          -- 5. WAIT 1 ENGINE FRAME FOR SERVER COLLECTION TO REGISTER
-                          task.wait(0.03) 
+                          -- 5. INCREASE TIME TO COLLECT: Hold position for a moment so the server registers the touch above you
+                          task.wait(0.1) 
                           
-                          -- 6. IMMEDIATELY TELEPORT BACK TO YOUR EXACT ORIGINAL POSITION
+                          -- 6. TELEPORT BACK TO YOUR STARTING POSITION
                           root.CFrame = originalPos
                           
-                          -- 7. CLEAR MOMENTUM SO YOU DON'T GLITCH THROUGH THE FLOOR WHEN YOU RETURN
+                          -- 7. CLEAR ALL VELOCITY INERTIA
                           root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                           root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                           
-                          -- 8. RESET CHARACTER PHYSICS BACK TO NORMAL
+                          -- 8. RESTORE NORMAL CHARACTER CONTROLS
                           humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                           
-                          -- Small rest delay before checking for another new orb spawn
-                          task.wait(0.1)
+                          -- Tiny rest period before looking for the next drop
+                          task.wait(0.05)
                       end
                   end
-                  task.wait(0.05) -- Clean background check speed to stop execution lag
+                  task.wait(0.05)
               end
           end)
       end
    end,
 })
-
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
 local UtilityTab = Window:CreateTab("Utility", nil) 
