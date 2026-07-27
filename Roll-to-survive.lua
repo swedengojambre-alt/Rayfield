@@ -107,29 +107,34 @@ local Toggle1 = MainTab:CreateToggle({
                   if root and humanoid then
                       local orb = workspace:FindFirstChild("DropOrb")
                       if orb and orb:IsA("BasePart") then
+                          -- SAVE YOUR EXACT STARTING POSITION
                           local originalPos = root.CFrame
-                          local downwardOffset = Vector3.new(0, -4, 0) -- Adjusted to 4 studs to sit completely clear below it
                           
-                          -- 1. FORCE THE HUMANOID TO IGNORE FLOOR GEOMETRY
+                          -- TURN OFF MAP COLLISIONS
                           humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-                          
-                          -- 2. DISABLE COLLISIONS ON THE CHARACTER TEMPORARILY
                           for _, part in ipairs(character:GetChildren()) do
                               if part:IsA("BasePart") then
                                   part.CanCollide = false
                               end
                           end
                           
-                          -- 3. TELEPORT BELOW THE OBJECT
-                          root.CFrame = orb.CFrame + downwardOffset
-                          task.wait(0.1) -- Increased slightly so the engine registers the physical position
+                          -- TELEPORT EXACTLY BELOW THE ORB
+                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 4, orb.Position.Z)
+                          root.CFrame = targetCFrame
+                          task.wait(0.02) -- Hold for 1 frame to register collection
                           
-                          -- 4. SNAP BACK AND RESET CHARACTER STATE
+                          -- TELEPORT BACK TO YOUR EXACT STARTING POSITION
                           root.CFrame = originalPos
+                          
+                          -- FORCE VELOCITY RESET (Prevents getting stuck or falling through original ground)
+                          root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                          root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                          
+                          -- RESET CHARACTER STATE
                           humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                       end
                   end
-                  task.wait(0.1) -- Stable frame yield to prevent client execution crashes
+                  task.wait(0.02)
               end
           end)
       end
