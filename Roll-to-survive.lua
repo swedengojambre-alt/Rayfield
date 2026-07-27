@@ -122,14 +122,14 @@ local Toggle1 = MainTab:CreateToggle({
                           
                           -- 3. TELEPORT BELOW THE OBJECT
                           root.CFrame = orb.CFrame + downwardOffset
-                          task.wait(0.01) -- Increased slightly so the engine registers the physical position
+                          task.wait(0.1) -- Increased slightly so the engine registers the physical position
                           
                           -- 4. SNAP BACK AND RESET CHARACTER STATE
                           root.CFrame = originalPos
                           humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                       end
                   end
-                  task.wait(0.01) -- Stable frame yield to prevent client execution crashes
+                  task.wait(0.1) -- Stable frame yield to prevent client execution crashes
               end
           end)
       end
