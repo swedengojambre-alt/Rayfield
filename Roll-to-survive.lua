@@ -90,6 +90,7 @@ local Toggle2 = MainTab:CreateToggle({
 })
 
 -- TOGGLE 1: AUTO POTION
+local TweenService = game:GetService("TweenService")
 local Toggle1 = MainTab:CreateToggle({
    Name = "Auto Collect Potion",
    CurrentValue = false,
@@ -105,7 +106,7 @@ local Toggle1 = MainTab:CreateToggle({
                   local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
                   if root and humanoid then
-                      -- Find an unclaimed DropOrb
+                      -- Locate an unhandled DropOrb instance
                       local orb = nil
                       for _, child in ipairs(workspace:GetChildren()) do
                           if child.Name == "DropOrb" and child:IsA("BasePart") and not child:GetAttribute("Claimed") then
@@ -115,13 +116,13 @@ local Toggle1 = MainTab:CreateToggle({
                       end
 
                       if orb then
-                          -- 1. LOCK THE ORB IMMEDIATELY
+                          -- Lock targeted asset
                           orb:SetAttribute("Claimed", true)
 
-                          -- 2. SAVE YOUR EXACT STARTING POSITION AND ORIENTATION
+                          -- Cache baseline coordinates
                           local originalPos = root.CFrame
                           
-                          -- 3. BYPASS MAP GEOMETRY COLLISIONS
+                          -- Override local collision states
                           humanoid:ChangeState(Enum.HumanoidStateType.Physics)
                           for _, part in ipairs(character:GetChildren()) do
                               if part:IsA("BasePart") then
@@ -129,26 +130,35 @@ local Toggle1 = MainTab:CreateToggle({
                               end
                           end
                           
-                          -- 4. FIX HEIGHT: Force position 5 studs BELOW the orb while matching your current look direction
+                          -- Calculate destination matrix completely beneath the object
                           local lookDirection = originalPos.LookVector
                           local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 5, orb.Position.Z) * CFrame.lookAt(Vector3.new(0,0,0), Vector3.new(lookDirection.X, 0, lookDirection.Z))
-                          root.CFrame = targetCFrame
                           
-                          -- 5. INCREASE TIME TO COLLECT: Hold position for a moment so the server registers the touch above you
-                          task.wait(0.1) 
+                          -- Define smooth, rapid linear interpolation settings (Linear speed bypasses anti-teleport check)
+                          local glideTime = 0.15 -- Time in seconds to glide across the map grid
+                          local tweenInfo = TweenInfo.new(glideTime, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut)
                           
-                          -- 6. TELEPORT BACK TO YOUR STARTING POSITION
-                          root.CFrame = originalPos
+                          -- GLIDE TO THE TARGET POSITION
+                          local moveForward = TweenService:Create(root, tweenInfo, {CFrame = targetCFrame})
+                          moveForward:Play()
+                          moveForward.Completed:Wait() -- Wait until your body physically reaches the orb space
                           
-                          -- 7. CLEAR ALL VELOCITY INERTIA
+                          -- BRIEF FRAME HOLD TO ENFORCE COLLECTION REGISTRATION Above You
+                          task.wait(0.05) 
+                          
+                          -- GLIDE STRAIGHT BACK TO STARTING POSITION
+                          local moveReturn = TweenService:Create(root, tweenInfo, {CFrame = originalPos})
+                          moveReturn:Play()
+                          moveReturn.Completed:Wait()
+                          
+                          -- Reset physical velocities to ensure zero rubberbanding
                           root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                           root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                           
-                          -- 8. RESTORE NORMAL CHARACTER CONTROLS
+                          -- Restabilize default physics loop
                           humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
                           
-                          -- Tiny rest period before looking for the next drop
-                          task.wait(0.05)
+                          task.wait(0.1)
                       end
                   end
                   task.wait(0.05)
@@ -157,6 +167,7 @@ local Toggle1 = MainTab:CreateToggle({
       end
    end,
 })
+
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
 local UtilityTab = Window:CreateTab("Utility", nil) 
