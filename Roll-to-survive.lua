@@ -115,11 +115,11 @@ local Toggle1 = MainTab:CreateToggle({
                           -- MOVE BELOW THE OBJECT WITH THE OFFSET
                           root.CFrame = orb.CFrame + downwardOffset
                           
-                          task.wait(0.0001)
+                          task.wait(0.1)
                           root.CFrame = originalPos
                       end
                   end
-                  task.wait(0.0001)
+                  task.wait(0.1)
               end
           end)
       end
