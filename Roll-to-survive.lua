@@ -107,11 +107,12 @@ local Toggle1 = MainTab:CreateToggle({
                       local orb = workspace:FindFirstChild("DropOrb")
                       if orb and orb:IsA("BasePart") then
                           local originalPos = root.CFrame
+                          local downwardOffset = Vector3.new(0, -7, 0)
                           
-                          -- 1. DEFINE THE OFFSET HERE
-                          local downwardOffset = Vector3.new(0, -5, 0)
+                          -- TURN OFF COLLISIONS ON THE OBJECT RIGHT HERE
+                          orb.CanCollide = false
                           
-                          -- 2. ADD THE OFFSET TO THE ORB'S POSITION HERE
+                          -- MOVE BELOW THE OBJECT WITH THE OFFSET
                           root.CFrame = orb.CFrame + downwardOffset
                           
                           task.wait(0.0001)
@@ -124,6 +125,7 @@ local Toggle1 = MainTab:CreateToggle({
       end
    end,
 })
+
 
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
