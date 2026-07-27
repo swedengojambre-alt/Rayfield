@@ -107,7 +107,13 @@ local Toggle1 = MainTab:CreateToggle({
                       local orb = workspace:FindFirstChild("DropOrb")
                       if orb and orb:IsA("BasePart") then
                           local originalPos = root.CFrame
-                          root.CFrame = orb.CFrame
+                          
+                          -- 1. DEFINE THE OFFSET HERE
+                          local downwardOffset = Vector3.new(0, -5, 0)
+                          
+                          -- 2. ADD THE OFFSET TO THE ORB'S POSITION HERE
+                          root.CFrame = orb.CFrame + downwardOffset
+                          
                           task.wait(0.0001)
                           root.CFrame = originalPos
                       end
@@ -118,6 +124,7 @@ local Toggle1 = MainTab:CreateToggle({
       end
    end,
 })
+
 
 -- ==================== UTILITY CATEGORY: UTILITY TAB ====================
 local UtilityTab = Window:CreateTab("Utility", nil) 
