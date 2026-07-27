@@ -131,7 +131,7 @@ local Toggle1 = MainTab:CreateToggle({
                           
                           -- 4. HEIGHT FIX: Force position 5 studs BELOW the orb
                           local lookDirection = originalPos.LookVector
-                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 5, orb.Position.Z) * CFrame.lookAt(Vector3.new(0,0,0), Vector3.new(lookDirection.X, 0, lookDirection.Z))
+                          local targetCFrame = CFrame.new(orb.Position.X, orb.Position.Y - 8, orb.Position.Z) * CFrame.lookAt(Vector3.new(0,0,0), Vector3.new(lookDirection.X, 0, lookDirection.Z))
                           
                           -- 5. HOLD POSITION UNTIL COLLECTED
                           -- This keeps teleporting you below the orb until the orb vanishes from the workspace
